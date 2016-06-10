@@ -1,0 +1,15 @@
+boto3==1.2.3
+tqdm
+pyquery
+nltk
+# --egg https://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.1.3.tar.gz
+sqlalchemy
+#numpy==1.10.2
+#Pillow==3.0.0
+#pyquery==1.2.10
+# use 1/6/16 version of pyquery including improved namespace support
+#-e git://github.com/gawel/pyquery.git@0d890933c0d0e0547c83ef463a7061851ccab253#egg=pyquery
+wordcloud
+numpy
+Pillow
+cityhash
