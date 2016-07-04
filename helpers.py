@@ -52,6 +52,8 @@ def parse_files(paths):
 
 def get_case_text(case):
     # strip labels from footnotes:
+    if type(case) == str and case[-4:] == '.xml':
+        case = parse_file(case)
     for footnote in case('casebody|footnote'):
         label = footnote.attrib.get('label')
         if label and footnote[0].text.startswith(label):
