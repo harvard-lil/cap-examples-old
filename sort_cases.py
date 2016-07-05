@@ -9,7 +9,6 @@ from helpers import parse_file, makedirs
 source_dir = "/ftldata/harvard-ftl-shared"
 dest_dir = "/ftldata/research_set"
 tmp_dest_dir = "/ftldata/.research_set_in_progress"
-topic_modeling_pipeline = "/ftldata/topic_modeling_pipline.txt"
 
 def sort_case(case_xml_path):
     pq = parse_file(case_xml_path)
@@ -22,9 +21,6 @@ def sort_case(case_xml_path):
     dest_path = os.path.join(volume_dir, os.path.basename(case_xml_path))
     if os.path.exists(dest_path):
         os.remove(dest_path)
-    else:
-        with open(topic_modeling_pipeline, 'a') as output_file:
-            output_file.write(dest_path+'\n')
 
     os.link(case_xml_path, dest_path)
 
