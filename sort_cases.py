@@ -21,7 +21,6 @@ def sort_case(case_xml_path):
     dest_path = os.path.join(volume_dir, os.path.basename(case_xml_path))
     if os.path.exists(dest_path):
         os.remove(dest_path)
-
     os.link(case_xml_path, dest_path)
 
 def sort_volume(volume_path):
