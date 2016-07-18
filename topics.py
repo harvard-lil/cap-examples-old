@@ -37,7 +37,7 @@ def get_topics(files_array=[], n_clusters=100):
     start_time = time.time()
     print 'Time at start: %.3f' % (time.time() - start_time)
     sys.stdout.flush()
-    formatted_case_list = format_file_list(train_filename)
+
 
     train_texts = get_training_text()
     print 'Time after getting train text from XML: %.3f' % (time.time() - start_time)

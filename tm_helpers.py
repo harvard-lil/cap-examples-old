@@ -15,6 +15,7 @@ def format_file_list(filename):
 
 def get_training_text():
     training_text_filename = "/ftldata/topic_modeling/result_docs/training_text.txt"
+    train_filename = "/ftldata/topic_modeling/result_docs/case_sample_list2.txt"
     start_time = time.time()
     if os.path.isfile(training_text_filename):
         contents = [line.rstrip('\n') for line in open(training_text_filename)]
