@@ -6,7 +6,7 @@ sys.setdefaultencoding('utf-8')
 import numpy as np
 import bottleneck as bn
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from helpers import get_case_text, get_tm_data, format_tm_file_list
+from tm_helpers import get_data, format_file_list, get_training_text
 from sklearn.decomposition import NMF
 import csv
 import time
@@ -25,7 +25,7 @@ def get_topics_for_all_in_dir(current_dir='.'):
             get_topics(files_array=files)
 
 def get_topics_for_new_files():
-    topic_pipeline = format_tm_file_list(topic_modeling_pipline)
+    topic_pipeline = format_file_list(topic_modeling_pipline)
     get_topics(files=topic_pipeline)
     os.remove(topic_modeling_pipline)
 
@@ -37,9 +37,9 @@ def get_topics(files_array=[], n_clusters=100):
     start_time = time.time()
     print 'Time at start: %.3f' % (time.time() - start_time)
     sys.stdout.flush()
-    formatted_case_list = format_tm_file_list(train_filename)
+    formatted_case_list = format_file_list(train_filename)
 
-    train_texts = map(get_case_text, formatted_case_list)
+    train_texts = get_training_text()
     print 'Time after getting train text from XML: %.3f' % (time.time() - start_time)
     sys.stdout.flush()
 
@@ -82,7 +82,7 @@ def get_topics(files_array=[], n_clusters=100):
     print '\nTime after NMF output: %.3f' % (time.time() - start_time)
     sys.stdout.flush()
 
-    test_data = map(get_tm_data, files_array)
+    test_data = map(get_data, files_array)
     test_texts = [t for f,y,j,t in test_data]
 
     test_mat_init = vectorizer.transform(test_texts)

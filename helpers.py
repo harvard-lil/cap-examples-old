@@ -81,14 +81,3 @@ def makedirs(path):
         os.makedirs(path)
     except OSError:
         pass
-
-def get_tm_data(filename):
-    pq = parse_file(filename)
-    jurisdiction = pq("case|court").attr('jurisdiction').strip()
-    return filename, get_decision_date(pq), jurisdiction, get_case_text(pq)
-
-def format_tm_file_list(filename):
-    with open(filename, 'rb') as input_file:
-        train_case_list = list(input_file)
-        train_case_list = map(lambda s : s.replace('\n','').replace('\r',''), train_case_list)
-    return train_case_list
