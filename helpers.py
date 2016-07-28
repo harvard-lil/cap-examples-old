@@ -54,6 +54,8 @@ def get_case_text(case):
     # strip labels from footnotes:
     if type(case) == str and case[-4:] == '.xml':
         case = parse_file(case)
+    elif type(case) == str:
+        return ''
     for footnote in case('casebody|footnote'):
         label = footnote.attrib.get('label')
         if label and footnote[0].text.startswith(label):
@@ -81,14 +83,3 @@ def makedirs(path):
         os.makedirs(path)
     except OSError:
         pass
-
-def get_tm_data(filename):
-    pq = parse_file(filename)
-    jurisdiction = pq("case|court").attr('jurisdiction').strip()
-    return filename, get_decision_date(pq), jurisdiction, get_case_text(pq)
-
-def format_tm_file_list(filename):
-    with open(filename, 'rb') as input_file:
-        train_case_list = list(input_file)
-        train_case_list = map(lambda s : s.replace('\n','').replace('\r',''), train_case_list)
-    return train_case_list
