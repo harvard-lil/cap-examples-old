@@ -15,11 +15,17 @@ $ sudo s3fs harvard-ftl-research /mnt/harvard-ftl-research -o iam_role=bastion-s
 $ echo "harvard-ftl-shared /mnt/harvard-ftl-shared fuse.s3fs _netdev,allow_other,iam_role=bastion-server,umask=0002,gid=501 0 0" | sudo tee -a /etc/fstab
 
 # set up regular users
-$ sudo useradd -g ftl-data jcushman
-$ sudo su - jcushman
-$ mkdir .ssh; chmod 700 .ssh; touch .ssh/authorized_keys; chmod 600 .ssh/authorized_keys; echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzXOyIfnd5lknDClxLLMg7S2oVRw6RCc0GNwvU4Qh6yxa/g4Ykl1ah3ZfaWakj+ZKF28S24ABk3q0EsWqc5pYilhspWwqrBJ4Wib6bVB7QxHVT6R1v1QX2yk8zP4nWaCqoXj/y1YHze9BqQ1Bu4VgJNArsX3GjqOp22c8dhYze/ZrxYy187HMXFh3KmBQuvmuPAZiU6govHfKL6zxV9daSknGY3ZgOgZwh5aSsbNyNIe27oOU8ruzTDrooqpq/tExmjh6Pfm1c2RY2uj7hEyX+u4iff9iMa0WAnR7uKWPsdW4C6abHhQhK7owvtV0+psPyQuhlvmzv55FihYaPZPIt jcushman@gmail.com" > .ssh/authorized_keys
-$ logout
-$ echo "export AWS_DEFAULT_REGION=\`ec2-metadata -z | sed 's/[a-z]$//' | sed 's/placement: //'\`" | sudo tee -a /home/jcushman/.bashrc
+$ export NAME=username
+$ export SSH_PUB_KEY="public key string"
+$ sudo useradd -g ftl-data $NAME
+$ sudo su - $NAME <<'EOF'
+mkdir .ssh
+chmod 700 .ssh
+touch .ssh/authorized_keys
+chmod 600 .ssh/authorized_keys
+echo "export AWS_DEFAULT_REGION=\`ec2-metadata -z | sed 's/[a-z]$//' | sed 's/placement: //'\`" > .bashrc
+EOF
+$ echo "$SSH_PUB_KEY" | sudo tee -a /home/$NAME/.ssh/authorized_keys
 
 # mount data block storage
 $ sudo yum install -y xfsprogs
