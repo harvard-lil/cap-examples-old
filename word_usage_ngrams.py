@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import io
 import os
 import sys
 import unicodedata
@@ -22,13 +22,20 @@ global word_dict
 
 log_file = "word_usage_2.log"
 error_file = "error_file.txt"
-word_ngrams_dir = "/word_ngrams/"
+word_ngrams_dir = "%s/word_ngrams/" % os.path.curdir
 logging.basicConfig(format='%(levelname)s:%(message)s', filename=log_file,  level=logging.DEBUG)
 exclude_states = []
 word_dict = {}
 
+if not os.path.exists(word_ngrams_dir):
+    os.makedirs(word_ngrams_dir)
+
 def touch_open(filename, *args):
-    fd = os.open(filename, os.O_RDWR | os.O_CREAT)
+    try:
+        fd = os.open(filename, os.O_RDWR | os.O_CREAT)
+    except:
+        io.FileIO(filename, 'a')
+        pass
     return os.fdopen(fd, *args)
 
 touch_open(error_file)
@@ -113,7 +120,7 @@ def write_words_to_json_files():
     date = str(date)
 
     for word in word_dict.iterkeys():
-        word_filename = ".%s%s.txt" % (word_ngrams_dir, word)
+        word_filename = "%s%s.txt" % (word_ngrams_dir, word)
         local_word_count = word_dict[word]
         with touch_open(word_filename, 'r+') as f:
             try:
@@ -125,6 +132,7 @@ def write_words_to_json_files():
                     f.truncate()
                     data = {}
                 pass
+
             if not data.get(state):
                 data[state] = { date: local_word_count }
             else:
@@ -153,7 +161,7 @@ def get_state(path):
         if s in state_list:
             return s
 
-    # if state here, take a guess
+    # if state not here, take a guess
     return path_list[3]
 
 def prepare_word_dictionary():
@@ -179,7 +187,6 @@ def get_word_usage(files_array=[]):
     prepare_word_dictionary()
 
     global state
-    output_file = "%s_output.txt" % state
 
     for single_file in files_array:
         if not is_xml(single_file) or not is_file(single_file):
@@ -209,7 +216,6 @@ def get_words_for_all_in_dir():
         if len(files):
             global state
             # TODO: find better way to get state
-            # p = os.path.join(root, dirs)
 
             files = [os.path.join(root, f) for f in files]
             try:
