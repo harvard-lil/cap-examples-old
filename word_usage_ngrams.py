@@ -1,15 +1,18 @@
+#!/usr/bin/env python
+
 import os
+import sys
 import unicodedata
 from pyspark.sql.types import *
 from pyspark.sql.utils import *
 from pyspark.sql import SQLContext
-import sys
-
+from pyspark import SparkContext
+sc = SparkContext("local", "Simple App")
+sqlContext = SQLContext(sc)
 
 reload(sys)
 sys.setdefaultencoding("utf-8")
 import json
-# sqlContext = SQLContext(sc)
 import re
 import logging
 import datetime
@@ -19,8 +22,9 @@ global word_dict
 
 log_file = "word_usage_2.log"
 error_file = "error_file.txt"
+word_ngrams_dir = "/word_ngrams/"
 logging.basicConfig(format='%(levelname)s:%(message)s', filename=log_file,  level=logging.DEBUG)
-exclude_states = ['Massachusetts']
+exclude_states = []
 word_dict = {}
 
 def touch_open(filename, *args):
@@ -50,9 +54,9 @@ def filter_word(word):
     logging.info('filter_word: %s', word)
     if word:
         try:
-            word = word.decode('unicode_escape').encode('ascii', 'ignore')
-        except UnicodeDecodeError as e:
-            logging.warning('WORD_USAGE_LOG filter_word UnicodeDecodeError: %s', word)
+            word = word.encode('utf8')
+        except Exception as e:
+            logging.warning('WORD_USAGE_LOG filter_word UnicodeDecodeError: %s %s', word, e)
             pass
 
         word = alphabet_words.sub('', word)
@@ -109,7 +113,7 @@ def write_words_to_json_files():
     date = str(date)
 
     for word in word_dict.iterkeys():
-        word_filename = "./word_output/%s.txt" % word
+        word_filename = ".%s%s.txt" % (word_ngrams_dir, word)
         local_word_count = word_dict[word]
         with touch_open(word_filename, 'r+') as f:
             try:
@@ -142,6 +146,16 @@ def get_columns(cols):
             legit_cols.append(col)
     return legit_cols
 
+def get_state(path):
+    state_list = ['Alabama','Alaska','American Samoa','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','District of Columbia','Federated States of Micronesia','Florida','Georgia','Guam','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Marshall Islands','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Northern Mariana Islands','Ohio','Oklahoma','Oregon','Palau','Pennsylvania','Puerto Rico','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virgin Island','Virginia','Washington','West Virginia','Wisconsin','Wyoming']
+    path_list = path.split('/')
+    for s in path_list:
+        if s in state_list:
+            return s
+
+    # if state here, take a guess
+    return path_list[3]
+
 def prepare_word_dictionary():
     global word_dict
     word_dict = {}
@@ -161,7 +175,7 @@ def walk_through_words(words):
         else:
             get_local_word_counts(word)
 
-def get_word_usage(sqlContext, sc, files_array=[]):
+def get_word_usage(files_array=[]):
     prepare_word_dictionary()
 
     global state
@@ -170,6 +184,7 @@ def get_word_usage(sqlContext, sc, files_array=[]):
     for single_file in files_array:
         if not is_xml(single_file) or not is_file(single_file):
             continue
+
         logging.info('parsing file: %s', single_file)
 
         df = sqlContext.read.format('com.databricks.spark.xml').options(rowTag='casebody').load(single_file)
@@ -188,16 +203,26 @@ def get_word_usage(sqlContext, sc, files_array=[]):
 
         write_words_to_json_files()
 
-def get_words_for_all_in_dir(sqlContext, sc, current_dir='.'):
+def get_words_for_all_in_dir():
+    current_dir = sys.argv[1]
     for root, dirs, files in os.walk(current_dir):
         if len(files):
             global state
             # TODO: find better way to get state
-            state = root.split('/')[3]
+            # p = os.path.join(root, dirs)
+
+            files = [os.path.join(root, f) for f in files]
+            try:
+                state = get_state(files[0])
+            except IndexError as e:
+                continue
             if state in exclude_states:
                 continue
             files = [os.path.join(root, f) for f in files]
+
             logging.info("WORD_USAGE_LOG %s", state)
-            get_word_usage(sqlContext, sc, files_array=files)
+            get_word_usage(files_array=files)
 
 
+if __name__ == "__main__":
+    get_words_for_all_in_dir()
