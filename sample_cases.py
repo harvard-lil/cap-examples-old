@@ -18,8 +18,9 @@ for current_dir in sample_dir_list:
             if sys.argv[1]:
                 with open(sys.argv[2], 'ab') as output_file:
                     for case in sample_case_list:
-                        full_path = os.path.join(dir_path, case + '\n')
-                        output_file.write(full_path)
+                        if case[-4:] == '.xml':
+                            full_path = os.path.join(dir_path, case + '\n')
+                            output_file.write(full_path)
             else:
                 for case in sample_case_list:
                     print case
