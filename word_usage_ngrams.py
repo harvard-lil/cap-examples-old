@@ -19,10 +19,11 @@ import datetime
 global date
 global state
 global word_dict
+global region_path
 
-log_file = "word_usage_2.log"
-error_file = "error_file.txt"
-word_ngrams_dir = "%s/word_ngrams/" % os.path.curdir
+log_file = "%s/word_usage_2.log" % os.path.curdir
+error_file = "%s/error_file.txt" % os.path.curdir
+word_ngrams_dir = "%s/word_ngrams_output/" % os.path.curdir
 logging.basicConfig(format='%(levelname)s:%(message)s', filename=log_file,  level=logging.DEBUG)
 exclude_states = []
 word_dict = {}
@@ -89,39 +90,73 @@ def get_decisiondate(x):
 
 def parse_elements(x):
     word_list = []
-    if type(x) is int:
-        return
-    for element in x:
-        logging.info('WORD_USAGE_LOG parse_elements: element %s type %s', element, type(element))
-        if not element:
-            continue
-        if (type(element) is list):
-            for n in element:
-                word_list.append(parse_elements(n))
-        elif (type(element) is str):
-            word_list.append(split_string(element))
-        elif type(element) is unicode:
-            element = unicodedata.normalize('NFKD', element).encode('ascii','ignore')
-            word_list.append(split_string(element))
-        elif type(element) is int:
-            continue
-        else:
-            val = extract_row_value(element)
-            word_list = word_list + split_string(val)
+    try:
+        if type(x) is int:
+            return
+        for element in x:
+            logging.info('WORD_USAGE_LOG parse_elements: element %s type %s', element, type(element))
+            if not element:
+                continue
+            if (type(element) is list):
+                for n in element:
+                    word_list.append(parse_elements(n))
+            elif (type(element) is str):
+                word_list.append(split_string(element))
+            elif type(element) is unicode:
+                element = unicodedata.normalize('NFKD', element).encode('ascii','ignore')
+                word_list.append(split_string(element))
+            elif type(element) is int:
+                continue
+            else:
+                val = extract_row_value(element)
+                word_list = word_list + split_string(val)
+    except Exception as e:
+        pass
     return word_list
 
 def extract_row_value(row):
     return row['#VALUE']
 
-def write_words_to_json_files():
+
+
+class NestedReadCreate(object):
+     def __init__(self, root):
+         self.root = root
+
+     def __call__(self, lookups=[], count=None):
+        obj = self.root
+        try:
+            # print "NestedReadCreate", obj
+            # import ipdb; ipdb.set_trace()
+            for idx,key in enumerate(lookups):
+                if (idx is len(lookups) - 1) and count:
+                    if not obj.get(key):
+                        obj[key] = count
+                    else:
+                        obj[key] = obj[key] + count
+                else:
+                    obj = obj[key]
+            return obj
+
+        except KeyError as e:
+            obj[key] = {}
+            if idx < len(lookups) - 1:
+                self.__call__(lookups=lookups, count=count)
+
+            return obj
+
+def write_words_to_json_files(file_path):
     global date
     global state
     global word_dict
-    date = str(date)
+    global region_path
 
     for word in word_dict.iterkeys():
         word_filename = "%s%s.txt" % (word_ngrams_dir, word)
         local_word_count = word_dict[word]
+        date = str(date)
+        full_region_path = region_path + [date]
+        
         with touch_open(word_filename, 'r+') as f:
             try:
                 data = json.load(f)
@@ -132,11 +167,11 @@ def write_words_to_json_files():
                     f.truncate()
                     data = {}
                 pass
-
-            if not data.get(state):
-                data[state] = { date: local_word_count }
-            else:
-                data[state][date] = local_word_count if not data[state].get(date) else data[state][date] + local_word_count
+            nrc = NestedReadCreate(data)
+            # checking if properties exist, creating them if they don't
+            nrc(lookups=full_region_path, count=local_word_count)
+            nrc(lookups=[state, 'total_state', date], count=local_word_count)
+            nrc(lookups=['total_country', date], count=local_word_count)
             f.seek(0)
             f.truncate()
             json.dump(data, f)
@@ -154,22 +189,24 @@ def get_columns(cols):
             legit_cols.append(col)
     return legit_cols
 
-def get_state(path):
+def parse_path(path):
     state_list = ['Alabama','Alaska','American Samoa','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','District of Columbia','Federated States of Micronesia','Florida','Georgia','Guam','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Marshall Islands','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Northern Mariana Islands','Ohio','Oklahoma','Oregon','Palau','Pennsylvania','Puerto Rico','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virgin Island','Virginia','Washington','West Virginia','Wisconsin','Wyoming']
     path_list = path.split('/')
-    for s in path_list:
+    for (idx,s) in enumerate(path_list):
         if s in state_list:
-            return s
-
+            state = s
+            # keep everything from path except last thing which is the .xml
+            path = path_list[idx:]
+            path.pop()
+            return [state, path]
     # if state not here, take a guess
-    return path_list[3]
+    return [path_list[3], path_list[4:]]
 
 def prepare_word_dictionary():
     global word_dict
     word_dict = {}
 
 def is_xml(file):
-
     return file[-4:] == '.xml'
 
 def is_file(file):
@@ -208,18 +245,18 @@ def get_word_usage(files_array=[]):
                 ef.write('%s\n' % single_file)
             continue
 
-        write_words_to_json_files()
+        write_words_to_json_files(file_path=single_file)
 
 def get_words_for_all_in_dir():
     current_dir = sys.argv[1]
     for root, dirs, files in os.walk(current_dir):
         if len(files):
             global state
-            # TODO: find better way to get state
+            global region_path
 
-            files = [os.path.join(root, f) for f in files]
+            files = [os.path.join(root, f) for f in files if f != '.DS_Store']
             try:
-                state = get_state(files[0])
+                state, region_path = parse_path(files[0])
             except IndexError as e:
                 continue
             if state in exclude_states:
