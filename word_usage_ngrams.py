@@ -126,8 +126,6 @@ class NestedReadCreate(object):
      def __call__(self, lookups=[], count=None):
         obj = self.root
         try:
-            # print "NestedReadCreate", obj
-            # import ipdb; ipdb.set_trace()
             for idx,key in enumerate(lookups):
                 if (idx is len(lookups) - 1) and count:
                     if not obj.get(key):
@@ -156,15 +154,14 @@ def write_words_to_json_files(file_path):
         local_word_count = word_dict[word]
         date = str(date)
         full_region_path = region_path + [date]
-        
+
         with touch_open(word_filename, 'r+') as f:
             try:
                 data = json.load(f)
             except Exception as e:
                 data = f.read()
                 if not data:
-                    f.seek(0)
-                    f.truncate()
+                    clear_file(f)
                     data = {}
                 pass
             nrc = NestedReadCreate(data)
@@ -172,14 +169,17 @@ def write_words_to_json_files(file_path):
             nrc(lookups=full_region_path, count=local_word_count)
             nrc(lookups=[state, 'total_state', date], count=local_word_count)
             nrc(lookups=['total_country', date], count=local_word_count)
-            f.seek(0)
-            f.truncate()
+            clear_file(f)
             json.dump(data, f)
     return
 
 def get_local_word_counts(word):
     global word_dict
     word_dict[word] = word_dict[word] + 1 if word_dict.get(word) else 1
+
+def clear_file(f):
+    f.seek(0)
+    f.truncate()
 
 def get_columns(cols):
     legit_cols = []
