@@ -95,8 +95,7 @@ def parse_elements(x):
             return
         for element in x:
             logging.info('WORD_USAGE_LOG parse_elements: element %s type %s', element, type(element))
-            if not element:
-                continue
+            if not element: continue
             if (type(element) is list):
                 for n in element:
                     word_list.append(parse_elements(n))
@@ -153,8 +152,7 @@ def write_words_to_json_files(file_path):
         word_filename = "%s%s.txt" % (word_ngrams_dir, word)
         local_word_count = word_dict[word]
         date = str(date)
-        full_region_path = region_path + [date]
-
+        full_region_path = ('.').join([x for x in region_path])
         with touch_open(word_filename, 'r+') as f:
             try:
                 data = json.load(f)
@@ -166,7 +164,7 @@ def write_words_to_json_files(file_path):
                 pass
             nrc = NestedReadCreate(data)
             # checking if properties exist, creating them if they don't
-            nrc(lookups=full_region_path, count=local_word_count)
+            nrc(lookups=[full_region_path, date], count=local_word_count)
             nrc(lookups=[state, 'total_state', date], count=local_word_count)
             nrc(lookups=['total_country', date], count=local_word_count)
             clear_file(f)
@@ -236,7 +234,7 @@ def get_word_usage(files_array=[]):
 
         try:
             date = get_decisiondate(df)
-            words = df.select(*(i for i in cols)).map(lambda x: parse_elements(x[0])).reduce(lambda l: [x for x in l if x is not None])
+            words = df.select(*(i for i in cols)).map(lambda x: x[0] if not type(x[0]) is int else []).map(lambda x: parse_elements(x)).reduce(lambda l: [x for x in l if x is not None])
             walk_through_words(words)
 
         except Exception as e:
@@ -259,9 +257,8 @@ def get_words_for_all_in_dir():
                 state, region_path = parse_path(files[0])
             except IndexError as e:
                 continue
-            if state in exclude_states:
-                continue
-            files = [os.path.join(root, f) for f in files]
+
+            if state in exclude_states: continue
 
             logging.info("WORD_USAGE_LOG %s", state)
             get_word_usage(files_array=files)
