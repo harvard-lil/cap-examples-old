@@ -1,0 +1,6 @@
+[submodule "lib/jurism-abbreviations"]
+	path = lib/jurism-abbreviations
+	url = https://github.com/Juris-M/jurism-abbreviations
+[submodule "lib/reporter-list"]
+	path = lib/reporter-list
+	url = https://github.com/harvard-lil/reporter-list
