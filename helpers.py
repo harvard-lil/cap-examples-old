@@ -29,6 +29,8 @@ namespaces = {
     'case': 'http://nrs.harvard.edu/urn-3:HLS.Libr.US_Case_Law.Schema.Case:v1',
     'casebody': 'http://nrs.harvard.edu/urn-3:HLS.Libr.US_Case_Law.Schema.Case_Body:v1',
     'volume': 'http://nrs.harvard.edu/urn-3:HLS.Libr.US_Case_Law.Schema.Volume:v1',
+    'xlink': 'http://www.w3.org/1999/xlink',
+    'alto': 'http://www.loc.gov/standards/alto/ns-v3#',
 }
 
 def parse_file(path):
@@ -83,3 +85,11 @@ def makedirs(path):
         os.makedirs(path)
     except OSError:
         pass
+
+def qn(tag):
+    """
+    Return qualified name of namespaced string -- e.g. xlink|foo becomes {http://www.w3.org/1999/xlink}foo.
+    """
+    prefix, s = tag.split('|')
+    uri = namespaces[prefix]
+    return '{%s}%s' % (uri, s)

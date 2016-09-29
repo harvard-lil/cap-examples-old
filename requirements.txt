@@ -13,3 +13,4 @@ wordcloud
 numpy
 Pillow
 cityhash
+reporters-db  # Court Listener reporters database

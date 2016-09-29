@@ -55,8 +55,10 @@ def get_lines(emphasis_patterns, count):
 def generate_limerick():
     line_types = json.load(open(os.path.join(source_dir, "limerick_lines.json")))
 
-    long_lines = get_lines(line_types['long'], 3)
-    short_lines = get_lines(line_types['short'], 2)
+    # long_lines = get_lines(line_types['long'], 3)
+    long_lines = get_lines({'*1**1**1': line_types['long']['*1**1**1']}, 3)
+    #short_lines = get_lines(line_types['short'], 2)
+    short_lines = get_lines({'*1**1': line_types['short']['*1**1']}, 2)
 
     print "\n".join(long_lines[:2]+short_lines+long_lines[2:])
 
