@@ -4,7 +4,7 @@ from glob import glob
 import shutil
 from tqdm import tqdm
 
-from helpers import parse_file, makedirs
+from helpers import parse_file, makedirs, get_jurisdiction, get_citation
 
 source_dir = "/ftldata/harvard-ftl-shared"
 dest_dir = "/ftldata/research_set"
@@ -12,8 +12,8 @@ tmp_dest_dir = "/ftldata/.research_set_in_progress"
 
 def sort_case(case_xml_path):
     pq = parse_file(case_xml_path)
-    jurisdiction = pq("case|court").attr('jurisdiction').strip()
-    citation = pq('case|citation[category="official"]').text().strip()
+    jurisdiction = get_jurisdiction(pq)
+    citation = get_citation(pq)
     cite_parts = citation.split(" ")
     volume, reporter, page_number = cite_parts[0], " ".join(cite_parts[1:-1]), cite_parts[-1]
     volume_dir = os.path.join(jurisdiction, reporter, volume)

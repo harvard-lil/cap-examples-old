@@ -40,6 +40,7 @@ def save_file(key, symlink=False):
 def make_output_dir(key):
     output_dir = os.path.join(dest_dir, key)
     makedirs(output_dir)
+    return output_dir
 
 def copy_files(key, symlink=False):
     make_output_dir(key)

@@ -70,6 +70,20 @@ def get_case_text(case):
 
     return text
 
+def get_jurisdiction(pq):
+    return pq("case|court").attr('jurisdiction').strip()
+
+def get_citation(pq):
+    return pq('case|citation[category="official"]').text().strip()
+
+def get_page_nums(pq):
+    firstpage = pq('casebody|court').parent().attr.firstpage or pq('casebody|opinion').parent().attr.firstpage or pq('casebody|p').parent().attr.firstpage
+    lastpage = pq('casebody|court').parent().attr.lastpage or pq('casebody|opinion').parent().attr.lastpage or pq('casebody|p').parent().attr.lastpage
+    return [firstpage, lastpage]
+
+def get_caseid(pq):
+    return pq('case|court').parent().attr.caseid
+
 def get_decision_date(pq):
     decision_date_text = pq('case|decisiondate').text()
     try:
@@ -79,6 +93,21 @@ def get_decision_date(pq):
             return datetime.strptime(decision_date_text, '%Y-%m')
         except ValueError:
             return datetime.strptime(decision_date_text, '%Y')
+
+def get_court(pq, abbreviation=False):
+    if abbreviation:
+        return pq('case|court').attr.abbreviation
+    else:
+        return pq('case|court').text()
+
+def get_name(pq, abbreviation=False):
+    if abbreviation:
+        return pq('case|name').attr.abbreviation
+    else:
+        return pq('case|name').text()
+
+def get_docketnumber(pq):
+    return pq('case|docketnumber').text()
 
 def makedirs(path):
     try:
