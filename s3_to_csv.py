@@ -3,8 +3,12 @@ import csv
 from helpers import *
 from tqdm import tqdm
 from glob import glob
-csv_path = "/ftldata/metadata/metadata_dump.csv"
+import time
+
 errors_file = "/ftldata/metadata/errors.txt"
+input_root_dir = "/ftldata/harvard-ftl-shared/from_vendor"
+metadata_doc_root = "/ftldata/metadata"
+metadata_dump_format = ".csv"
 
 fieldnames = [
     'caseid', 'firstpage', 'lastpage', 'jurisdiction',
@@ -13,72 +17,90 @@ fieldnames = [
     'court_abbreviation', 'name_abbreviation', 'volume',
     'reporter', 'timestamp']
 
-def write_metadata_to_csv(writer, case_xml_path):
+def parse_for_metadata(writer, case_xml_path):
     if not "_CASEMETS_" in case_xml_path:
         return
 
     pq = parse_file(case_xml_path)
-    lastpage = get_last_page_number(pq)
-    citation = get_citation(pq)
+
+    citation = normalize_unicode(get_citation(pq))
     cite_parts = citation.split(" ")
     volume, reporter, firstpage = cite_parts[0], " ".join(cite_parts[1:-1]), cite_parts[-1]
     firstpage = int(firstpage)
+    lastpage = normalize_unicode(get_last_page_number(pq))
     decisiondate = get_decision_date(pq)
-    fieldnames = [ 'caseid', 'firstpage', 'lastpage', 'jurisdiction', 'citation', 'docketnumber', 'decisiondate', 'decisiondate_original', 'court', 'name', 'court_abbreviation', 'name_abbreviation', 'volume', 'reporter']
     court = get_court(pq)
     name = get_name(pq)
     court_abbreviation = get_court(pq, True)
     name_abbreviation = get_name(pq, True)
     jurisdiction = get_jurisdiction(pq)
+
     try:
         timestamp = get_timestamp_if_exists(case_xml_path)
-    except:
-        print 'ERROR: timestamp error:', case_xml_path
+    except Exception as e:
+        print 'ERROR (timestamp):', e, case_xml_path
         timestamp = ''
         pass
 
-    try:
-        writer.writerow({
-            'caseid':get_caseid(pq),
-            'firstpage': firstpage,
-            'lastpage': lastpage,
-            'jurisdiction': normalize_unicode(jurisdiction),
-            'citation': normalize_unicode(citation),
-            'docketnumber': get_docketnumber(pq),
-            'decisiondate': decisiondate.toordinal(),
-            'decisiondate_original': get_original_decision_date(pq),
-            'court': normalize_unicode(court),
-            'name': normalize_unicode(name),
-            'court_abbreviation': normalize_unicode(court_abbreviation),
-            'name_abbreviation': normalize_unicode(name_abbreviation),
-            'volume': normalize_unicode(volume),
-            'reporter': normalize_unicode(reporter),
-            'timestamp': timestamp
-        })
-    except Exception as e:
-        print "ERROR:", e, case_xml_path
-        pass
+    return {
+        'caseid': get_caseid(pq),
+        'firstpage': firstpage,
+        'lastpage': lastpage,
+        'jurisdiction': normalize_unicode(jurisdiction),
+        'citation': normalize_unicode(citation),
+        'docketnumber': get_docketnumber(pq),
+        'decisiondate': decisiondate.toordinal(),
+        'decisiondate_original': get_original_decision_date(pq),
+        'court': normalize_unicode(court),
+        'name': normalize_unicode(name),
+        'court_abbreviation': normalize_unicode(court_abbreviation),
+        'name_abbreviation': normalize_unicode(name_abbreviation),
+        'volume': normalize_unicode(volume),
+        'reporter': normalize_unicode(reporter),
+        'timestamp': timestamp
+    }
 
-def write_all_existing_files(input_dir):
-    if not os.path.isfile(csv_path):
-        create_csv_file(csv_path)
+def write_metadata(input_dir=input_root_dir):
+    csv_path = generate_metadata_filepath()
+    create_metadata_file(csv_path)
     with open(csv_path,'a') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        # for root, dirs, files in tqdm(os.walk(input_dir)):\
-        [traverse_dir(writer, d) for d in glob('/ftldata/harvard-ftl-shared/from_vendor/*')]
+        # globbing in two steps to avoid extra memory usage
+        [traverse_dir(writer, d) for d in glob("%s/*" % input_dir)]
+
+def write_metadata_for_file(metadata_filepath, filename):
+    with open(metadata_filepath,'a') as metadata_file:
+        writer = csv.DictWriter(metadata_file, fieldnames=fieldnames)
+        metadata = parse_for_metadata(writer, filename)
+        write_row(writer, metadata)
+
+def write_row(writer, metadata):
+    try:
+        writer.writerow(metadata)
+        # this exception can happen when we get ascii characters I haven't accounted for
+    except Exception as e:
+        print "Uncaught ERROR:",e,f
+        pass
 
 def traverse_dir(writer, dir_name):
-    [write_metadata_to_csv(writer, f) for f in tqdm(glob("%s/casemets/*.xml" % dir_name))]
+    for f in tqdm(glob("%s/casemets/*.xml" % dir_name)):
+        metadata = parse_for_metadata(writer, f)
+        write_row(writer, metadata)
 
-def create_csv_file(cpath):
-    with open(cpath,'a') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
+def create_metadata_file(cpath):
+    if not os.path.isfile(cpath):
+        with open(cpath,'a') as new_file:
+            writer = csv.DictWriter(new_file, fieldnames=fieldnames)
+            writer.writeheader()
 
 def get_timestamp_if_exists(case_xml_path):
     path_parts = case_xml_path.split('/')
     reporter_num, ts = path_parts[-3].split('_redacted')
     return ts
 
+def generate_metadata_filepath(metadata_doc_root=metadata_doc_root, metadata_dump_format=metadata_dump_format):
+    timestamp = int(time.time())
+    return "%s/metadata_dump_%s%s" % (metadata_doc_root, timestamp, metadata_dump_format)
+
 if __name__ == '__main__':
-    write_all_existing_files('/ftldata/harvard-ftl-shared/from_vendor')
+    write_metadata()

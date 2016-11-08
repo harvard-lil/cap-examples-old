@@ -1,5 +1,9 @@
 import os
+import ast
+import sys
 import json
+import unicodedata
+from zipfile import ZipFile
 from pyquery import PyQuery
 from datetime import datetime
 from collections import defaultdict
@@ -76,10 +80,12 @@ def get_jurisdiction(pq):
 def get_citation(pq):
     return pq('case|citation[category="official"]').text().strip()
 
-def get_page_nums(pq):
-    firstpage = pq('casebody|court').parent().attr.firstpage or pq('casebody|opinion').parent().attr.firstpage or pq('casebody|p').parent().attr.firstpage
-    lastpage = pq('casebody|court').parent().attr.lastpage or pq('casebody|opinion').parent().attr.lastpage or pq('casebody|p').parent().attr.lastpage
-    return [firstpage, lastpage]
+def get_last_page_number(pq):
+    try:
+        lastpage = pq('casebody|court').parent().attr.lastpage or pq('casebody|opinion').parent().attr.lastpage or pq('casebody|p').parent().attr.lastpage or pq('casebody|summary').parent().attr.lastpage or pq('casebody|parties').parent().attr.lastpage
+        return int(lastpage)
+    except:
+        return ''
 
 def get_caseid(pq):
     return pq('case|court').parent().attr.caseid
@@ -93,6 +99,9 @@ def get_decision_date(pq):
             return datetime.strptime(decision_date_text, '%Y-%m')
         except ValueError:
             return datetime.strptime(decision_date_text, '%Y')
+
+def get_original_decision_date(pq):
+    return pq('case|decisiondate').text()
 
 def get_court(pq, abbreviation=False):
     if abbreviation:
@@ -122,3 +131,28 @@ def qn(tag):
     prefix, s = tag.split('|')
     uri = namespaces[prefix]
     return '{%s}%s' % (uri, s)
+
+def normalize_unicode(string):
+    if type(string) is str or type(string) is int:
+        return string
+    return unicodedata.normalize('NFKD', string).encode('ascii','ignore')
+
+def gzip_documents(zipname, filenames):
+    import zipfile
+    try:
+        import zlib
+        compression = zipfile.zip_deflated
+    except:
+        compression = zipfile.ZIP_STORED
+
+    with ZipFile(zipname, 'w') as zapfile:
+        for f in filenames:
+            fname = f.split('/')[-1]
+            zapfile.write(f, fname, compress_type=zipfile.ZIP_DEFLATED)
+
+        return zapfile
+
+if __name__ == '__main__':
+    zipname = argv[1]
+    filenames = ast.literal_eval(sys.argv[2])
+    gzip_documents(zipname, filenames)
