@@ -79,7 +79,7 @@ def write_row(writer, metadata):
         writer.writerow(metadata)
         # this exception can happen when we get ascii characters I haven't accounted for
     except Exception as e:
-        print "Uncaught ERROR:",e,f
+        print "Uncaught ERROR:",e
         pass
 
 def traverse_dir(writer, dir_name):
