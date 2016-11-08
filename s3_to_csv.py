@@ -72,20 +72,20 @@ def write_metadata_for_file(metadata_filepath, filename):
     with open(metadata_filepath,'a') as metadata_file:
         writer = csv.DictWriter(metadata_file, fieldnames=fieldnames)
         metadata = parse_for_metadata(writer, filename)
-        write_row(writer, metadata)
+        write_row(writer, filename, metadata)
 
-def write_row(writer, metadata):
+def write_row(writer, filename, metadata):
     try:
         writer.writerow(metadata)
         # this exception can happen when we get ascii characters I haven't accounted for
     except Exception as e:
-        print "Uncaught ERROR:",e
+        print "Uncaught ERROR:",e, filename
         pass
 
 def traverse_dir(writer, dir_name):
     for f in tqdm(glob("%s/casemets/*.xml" % dir_name)):
         metadata = parse_for_metadata(writer, f)
-        write_row(writer, metadata)
+        write_row(writer, f, metadata)
 
 def create_metadata_file(cpath):
     if not os.path.isfile(cpath):
