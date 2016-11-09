@@ -17,24 +17,31 @@ fieldnames = [
     'court_abbreviation', 'name_abbreviation', 'volume',
     'reporter', 'timestamp']
 
+def safe_pq(filename, pq, parse_method, *args):
+    try:
+        return normalize_unicode(parse_method(pq, *args))
+    except Exception as e:
+        print "Error:",e, filename
+        pass
+
 def parse_for_metadata(writer, case_xml_path):
     if not "_CASEMETS_" in case_xml_path:
         return
 
     pq = parse_file(case_xml_path)
-
-    citation = normalize_unicode(get_citation(pq))
+    citation = safe_pq(case_xml_path, pq, get_citation)
     cite_parts = citation.split(" ")
     volume, reporter, firstpage = cite_parts[0], " ".join(cite_parts[1:-1]), cite_parts[-1]
-    firstpage = int(firstpage)
-    lastpage = normalize_unicode(get_last_page_number(pq))
+    reporter = normalize_unicode(reporter)
+    lastpage = safe_pq(case_xml_path, pq, get_last_page_number)
     decisiondate = get_decision_date(pq)
-    court = get_court(pq)
-    name = get_name(pq)
-    court_abbreviation = get_court(pq, True)
-    name_abbreviation = get_name(pq, True)
-    jurisdiction = get_jurisdiction(pq)
-
+    court = safe_pq(case_xml_path, pq, get_court)
+    name = safe_pq(case_xml_path, pq, get_name)
+    court_abbreviation = safe_pq(case_xml_path, pq, get_court, True)
+    name_abbreviation = safe_pq(case_xml_path, pq, get_name,  True)
+    jurisdiction = safe_pq(case_xml_path, pq, get_jurisdiction)
+    docketnumber = safe_pq(case_xml_path, pq, get_docketnumber)
+    original_decision_date = safe_pq(case_xml_path, pq, get_original_decision_date)
     try:
         timestamp = get_timestamp_if_exists(case_xml_path)
     except Exception as e:
@@ -46,17 +53,17 @@ def parse_for_metadata(writer, case_xml_path):
         'caseid': get_caseid(pq),
         'firstpage': firstpage,
         'lastpage': lastpage,
-        'jurisdiction': normalize_unicode(jurisdiction),
-        'citation': normalize_unicode(citation),
-        'docketnumber': get_docketnumber(pq),
+        'jurisdiction': jurisdiction,
+        'citation': citation,
+        'docketnumber': docketnumber,
         'decisiondate': decisiondate.toordinal(),
-        'decisiondate_original': get_original_decision_date(pq),
-        'court': normalize_unicode(court),
-        'name': normalize_unicode(name),
-        'court_abbreviation': normalize_unicode(court_abbreviation),
-        'name_abbreviation': normalize_unicode(name_abbreviation),
-        'volume': normalize_unicode(volume),
-        'reporter': normalize_unicode(reporter),
+        'decisiondate_original': original_decision_date,
+        'court': court,
+        'name': name,
+        'court_abbreviation': court_abbreviation,
+        'name_abbreviation': name_abbreviation,
+        'volume': volume,
+        'reporter': reporter,
         'timestamp': timestamp
     }
 
