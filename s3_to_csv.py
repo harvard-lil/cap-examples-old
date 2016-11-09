@@ -8,6 +8,7 @@ import time
 errors_file = "/ftldata/metadata/errors.txt"
 input_root_dir = "/ftldata/harvard-ftl-shared/from_vendor"
 metadata_doc_root = "/ftldata/metadata"
+metadata_inprogress_dir = "/tmp"
 metadata_dump_format = ".csv"
 
 fieldnames = [
@@ -70,10 +71,13 @@ def parse_for_metadata(case_xml_path):
 def write_metadata(input_dir=input_root_dir):
     csv_path = generate_metadata_filepath()
     create_metadata_file(csv_path)
-    with open(csv_path,'a') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        # globbing in two steps to avoid extra memory usage
-        [traverse_dir(writer, d) for d in glob("%s/*" % input_dir)]
+    try:
+        with open(csv_path,'a') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            # globbing in two steps to avoid extra memory usage
+            [traverse_dir(writer, d) for d in glob("%s/*" % input_dir)]
+    finally:
+        move_to_root_dir(csv_path)
 
 def open_metadata_writer(metadata_filepath):
     return csv.DictWriter(open(metadata_filepath,'a'), fieldnames=fieldnames)
@@ -109,7 +113,12 @@ def get_timestamp_if_exists(case_xml_path):
 
 def generate_metadata_filepath(metadata_doc_root=metadata_doc_root, metadata_dump_format=metadata_dump_format):
     timestamp = int(time.time())
-    return "%s/metadata_dump_%s%s" % (metadata_doc_root, timestamp, metadata_dump_format)
+    return "%s%s/metadata_dump_%s%s" % (metadata_doc_root, metadata_inprogress_dir, timestamp, metadata_dump_format)
+
+def move_to_root_dir(csv_path):
+    path_parts = csv_path.split('/')
+    new_path = "%s/%s" % (metadata_doc_root, path_parts[-1])
+    os.rename(csv_path, new_path)
 
 if __name__ == '__main__':
     write_metadata()
