@@ -8,7 +8,7 @@ import time
 errors_file = "/ftldata/metadata/errors.txt"
 input_root_dir = "/ftldata/harvard-ftl-shared/from_vendor"
 metadata_doc_root = "/ftldata/metadata"
-metadata_inprogress_dir = "/inprogress"
+metadata_inprogress_dir = "/tmp"
 metadata_dump_format = ".csv"
 
 fieldnames = [
