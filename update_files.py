@@ -1,6 +1,5 @@
 import json
 import os
-import shelve
 
 import sys
 from itertools import islice
@@ -14,7 +13,7 @@ from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import sessionmaker
 from s3_to_ebs import save_file, make_output_dir
-from s3_to_csv import write_metadata_for_file, generate_metadata_filepath,create_metadata_file
+from s3_to_csv import write_metadata_for_file, generate_metadata_filepath,create_metadata_file, open_metadata_writer
 
 # set up database connection
 db_url = URL(drivername='mysql.mysqlconnector', host='ftl.cv97tsyby7rk.us-west-2.rds.amazonaws.com')
@@ -53,15 +52,17 @@ def dump_table(model, symlink=False):
 
     min_id = shelf.get(model.__name__, 0)
 
-    metadata_filepath = generate_metadata_filepath(timestamp)
+    metadata_filepath = generate_metadata_filepath()
     create_metadata_file(metadata_filepath)
+    metadata_writer = open_metadata_writer(metadata_filepath)
 
     items = qgen(session.query(model).filter(model.id>=min_id).order_by(model.id))
 
     def process_item(item):
-        output_file = make_output_dir(os.path.dirname(item.s3key))
-        save_file(item.s3key, symlink=symlink)
-        write_metadata_for_file(metadata_filepath, output_file)
+        make_output_dir(os.path.dirname(item.s3key))
+        output_file = save_file(item.s3key, symlink=symlink)
+        if output_file:
+            write_metadata_for_file(output_file, metadata_writer)
 
     while True:
         item_set = list(islice(items, 1000))
