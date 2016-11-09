@@ -5,6 +5,8 @@ import re
 from itertools import permutations, combinations
 
 from math import factorial
+
+import sys
 from tqdm import tqdm
 
 source_dir = "/ftldata/limerick_lines_merged"
@@ -52,8 +54,8 @@ def get_lines(emphasis_patterns, count):
     lines = [format_line(random.choice(line_set)) for line_set in line_sets]
     return lines
 
-def generate_limerick():
-    line_types = json.load(open(os.path.join(source_dir, "limerick_lines.json")))
+def generate_limerick(limerick_lines_file):
+    line_types = json.load(open(limerick_lines_file))
 
     # long_lines = get_lines(line_types['long'], 3)
     long_lines = get_lines({'*1**1**1': line_types['long']['*1**1**1']}, 3)
@@ -78,4 +80,8 @@ def count_possible_limericks():
 
 
 if __name__ == "__main__":
-    generate_limerick()
+    if len(sys.argv) > 1:
+        limerick_lines_file = sys.argv[1]
+    else:
+        limerick_lines_file = os.path.join(source_dir, "limerick_lines.json")
+    generate_limerick(limerick_lines_file)
