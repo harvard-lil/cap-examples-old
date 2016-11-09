@@ -24,7 +24,7 @@ def safe_pq(filename, pq, parse_method, *args):
         print "Error:",e, filename
         pass
 
-def parse_for_metadata(writer, case_xml_path):
+def parse_for_metadata(case_xml_path):
     if not "_CASEMETS_" in case_xml_path:
         return
 
@@ -75,10 +75,12 @@ def write_metadata(input_dir=input_root_dir):
         # globbing in two steps to avoid extra memory usage
         [traverse_dir(writer, d) for d in glob("%s/*" % input_dir)]
 
-def write_metadata_for_file(metadata_filepath, filename):
-    with open(metadata_filepath,'a') as metadata_file:
-        writer = csv.DictWriter(metadata_file, fieldnames=fieldnames)
-        metadata = parse_for_metadata(writer, filename)
+def open_metadata_writer(metadata_filepath):
+    return csv.DictWriter(open(metadata_filepath,'a'), fieldnames=fieldnames)
+
+def write_metadata_for_file(filename, writer):
+    metadata = parse_for_metadata(filename)
+    if metadata:
         write_row(writer, filename, metadata)
 
 def write_row(writer, filename, metadata):
@@ -91,7 +93,7 @@ def write_row(writer, filename, metadata):
 
 def traverse_dir(writer, dir_name):
     for f in tqdm(glob("%s/casemets/*.xml" % dir_name)):
-        metadata = parse_for_metadata(writer, f)
+        metadata = parse_for_metadata(f)
         write_row(writer, f, metadata)
 
 def create_metadata_file(cpath):

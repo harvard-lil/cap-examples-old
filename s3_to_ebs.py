@@ -36,6 +36,7 @@ def save_file(key, symlink=False):
             os.symlink(os.path.join(s3_mount_dir, key), output_file)
         else:
             boto3.resource('s3').Bucket(bucket_name).download_file(key, output_file)
+        return output_file
 
 def make_output_dir(key):
     output_dir = os.path.join(dest_dir, key)
