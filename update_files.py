@@ -13,7 +13,7 @@ from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import sessionmaker
 from s3_to_ebs import save_file, make_output_dir
-from s3_to_csv import write_metadata_for_file, generate_metadata_filepath,create_metadata_file, open_metadata_writer
+from s3_to_csv import write_metadata_for_file, generate_metadata_filepath, create_metadata_file, open_metadata_writer, move_to_root_dir
 
 # set up database connection
 db_url = URL(drivername='mysql.mysqlconnector', host='ftl.cv97tsyby7rk.us-west-2.rds.amazonaws.com')
@@ -73,6 +73,10 @@ def dump_table(model, symlink=False):
         print datetime.now(), model.__name__, item_set[0].id, time.time()
         sys.stdout.flush()
         threadpool.map(process_item, item_set)
+
+        # move metadata file to main directory to ready for transfer
+        move_to_root_dir(metadata_filepath)
+
         #map(process_item, item_set)
 
 dump_table(InnodataSharedCases)
