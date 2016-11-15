@@ -80,7 +80,8 @@ def write_metadata(input_dir=input_root_dir):
         move_to_root_dir(csv_path)
 
 def open_metadata_writer(metadata_filepath):
-    return csv.DictWriter(open(metadata_filepath,'a'), fieldnames=fieldnames)
+    csv_fp = open(metadata_filepath,'a')
+    return csv_fp, csv.DictWriter(csv_fp, fieldnames=fieldnames)
 
 def write_metadata_for_file(filename, writer):
     metadata = parse_for_metadata(filename)

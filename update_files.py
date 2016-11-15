@@ -54,7 +54,7 @@ def dump_table(model, symlink=False):
 
     metadata_filepath = generate_metadata_filepath()
     create_metadata_file(metadata_filepath)
-    metadata_writer = open_metadata_writer(metadata_filepath)
+    metadata_file, metadata_writer = open_metadata_writer(metadata_filepath)
 
     items = qgen(session.query(model).filter(model.id>=min_id).order_by(model.id))
 
@@ -64,20 +64,23 @@ def dump_table(model, symlink=False):
         if output_file:
             write_metadata_for_file(output_file, metadata_writer)
 
-    while True:
-        item_set = list(islice(items, 1000))
-        if not item_set:
-            break
-        shelf[model.__name__] = item_set[0].id
-        json.dump(shelf, open(__file__+".json", "w"))
-        print datetime.now(), model.__name__, item_set[0].id, time.time()
-        sys.stdout.flush()
-        threadpool.map(process_item, item_set)
+    try:
+        while True:
+            item_set = list(islice(items, 1000))
+            if not item_set:
+                break
+            shelf[model.__name__] = item_set[0].id
+            json.dump(shelf, open(__file__+".json", "w"))
+            print datetime.now(), model.__name__, item_set[0].id, time.time()
+            sys.stdout.flush()
+            threadpool.map(process_item, item_set)
+            #map(process_item, item_set)
 
+    finally:
         # move metadata file to main directory to ready for transfer
+        metadata_file.close()
         move_to_root_dir(metadata_filepath)
 
-        #map(process_item, item_set)
 
 dump_table(InnodataSharedCases)
 dump_table(InnodataSharedImages, symlink=True)
