@@ -82,7 +82,7 @@ def get_citation(pq):
 
 def get_last_page_number(pq):
     try:
-        lastpage = pq('casebody|court').parent().attr.lastpage or pq('casebody|opinion').parent().attr.lastpage or pq('casebody|p').parent().attr.lastpage or pq('casebody|summary').parent().attr.lastpage or pq('casebody|parties').parent().attr.lastpage
+        lastpage = pq('casebody|casebody').attr('lastpage')
         return int(lastpage)
     except:
         return ''
