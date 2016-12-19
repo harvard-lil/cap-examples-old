@@ -37,6 +37,11 @@ namespaces = {
     'alto': 'http://www.loc.gov/standards/alto/ns-v3#',
 }
 
+volmets_namespaces = {
+    'METS': 'http://www.loc.gov/METS/',
+    'volume': 'http://nrs.harvard.edu/urn-3:HLS.Libr.US_Case_Law.Schema.Volume:v1',
+}
+
 def parse_file(path):
     return PyQuery(filename=path, parser='xml', namespaces=namespaces)
 
@@ -151,6 +156,31 @@ def gzip_documents(zipname, filenames):
             zapfile.write(f, fname, compress_type=zipfile.ZIP_DEFLATED)
 
         return zapfile
+
+def get_volume_spinedates(vpq):
+    return vpq('volume|spinedate').text().split(' ')
+
+def get_volume_voldates(vpq):
+    return vpq('volume|voldate').text().split(' ')
+
+def get_volume_publisher(vpq):
+    return vpq('volume|publisher').text()
+
+def get_volume_publisher_place(vpq):
+    return vpq('volume|publisher').attr('place')
+
+def get_reporter_abbreviation(vpq):
+    return vpq('volume|reporter').attr('abbreviation')
+
+def get_volnumber(vpq):
+    return vpq('volume|reporter').attr('volnumber')
+
+def get_reporter_name(vpq):
+    return vpq('volume|reporter').text()
+
+def get_file_timestamp(path):
+    ts = os.path.getmtime(path)
+    return datetime.fromtimestamp(ts)
 
 if __name__ == '__main__':
     zipname = argv[1]

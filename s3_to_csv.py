@@ -68,6 +68,29 @@ def parse_for_metadata(case_xml_path):
         'timestamp': timestamp
     }
 
+def parse_vol_for_metadata(vol_xml_path):
+    if not "_METS.xml" in vol_xml_path:
+        return
+
+    vpq = parse_file(vol_xml_path) or ''
+    voldates = get_volume_voldates(vpq) or []
+    publisher = get_volume_publisher(vpq) or ''
+    place = get_volume_publisher_place(vpq) or ''
+    reporter_abbreviation = get_reporter_abbreviation(vpq) or ''
+    reporter_name = get_reporter_name(vpq) or ''
+    volnumber = get_volnumber(vpq) or ''
+    date = get_file_timestamp(vol_xml_path)
+    return {
+        'voldates': voldates,
+        'publisher': publisher,
+        'publisher_place': place,
+        'reporter_abbreviation': reporter_abbreviation,
+        'reporter_name': reporter_name,
+        'volnumber': volnumber,
+        'date': date,
+    }
+
+
 def write_metadata(input_dir=input_root_dir):
     csv_path = generate_metadata_filepath()
     create_metadata_file(csv_path)
