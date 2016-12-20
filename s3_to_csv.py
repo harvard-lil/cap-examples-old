@@ -31,9 +31,9 @@ def safe_pq(filename, pq, parse_method, *args):
 
 def parse_for_metadata(xml_path):
     if "_CASEMETS_" in xml_path:
-        parse_case_for_metadata(xml_path)
+        return parse_case_for_metadata(xml_path)
     elif "_redacted_METS.xml" in xml_path:
-        parse_vol_for_metadata(xml_path)
+        return parse_vol_for_metadata(xml_path)
     else:
         return
 
