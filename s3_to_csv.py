@@ -39,6 +39,8 @@ def parse_for_metadata(xml_path):
 
 def parse_case_for_metadata(case_xml_path):
     pq = parse_file(case_xml_path)
+    if not pq:
+        return
     citation = safe_pq(case_xml_path, pq, get_citation)
     cite_parts = citation.split(" ")
     volume, reporter, firstpage = cite_parts[0], " ".join(cite_parts[1:-1]), cite_parts[-1]
@@ -79,7 +81,9 @@ def parse_case_for_metadata(case_xml_path):
     }
 
 def parse_vol_for_metadata(vol_xml_path):
-    vpq = parse_file(vol_xml_path) or ''
+    vpq = parse_volmets_file(vol_xml_path)
+    if not vpq:
+        return
     voldate = get_volume_voldate(vpq) or ''
     publisher = get_volume_publisher(vpq) or ''
     place = get_volume_publisher_place(vpq) or ''

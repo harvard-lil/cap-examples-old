@@ -45,6 +45,9 @@ volmets_namespaces = {
 def parse_file(path):
     return PyQuery(filename=path, parser='xml', namespaces=namespaces)
 
+def parse_volmets_file(path):
+    return PyQuery(filename=path, parser='xml', namespaces=volmets_namespaces)    
+
 def get_case_files(case_root):
     for dir_name, subdir_list, file_list in os.walk(case_root):
         for file_name in file_list:
