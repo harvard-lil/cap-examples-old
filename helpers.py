@@ -160,8 +160,9 @@ def gzip_documents(zipname, filenames):
 def get_volume_spinedates(vpq):
     return vpq('volume|spinedate').text().split(' ')
 
-def get_volume_voldates(vpq):
-    return vpq('volume|voldate').text().split(' ')
+def get_volume_voldate(vpq):
+    dates = vpq('volume|voldate').text().split(' ')
+    return dates[0]
 
 def get_volume_publisher(vpq):
     return vpq('volume|publisher').text()
@@ -179,8 +180,23 @@ def get_reporter_name(vpq):
     return vpq('volume|reporter').text()
 
 def get_file_timestamp(path):
-    ts = os.path.getmtime(path)
-    return datetime.fromtimestamp(ts)
+    return os.path.getmtime(path)
+
+def get_vol_barcode(vpq):
+    return vpq('volume|volume').attr('barcode')
+
+def get_nominativereporter_name(vpq):
+    return vpq('volume|nominativereporter').text()
+
+def get_nominativereporter_abbreviation(vpq):
+    return vpq('volume|nominativereporter').attr('abbreviation')
+
+def get_nominativereporter_abbreviation(vpq):
+    return vpq('volume|nominativereporter').attr('abbreviation')
+
+def get_nominativereporter_volnumber(vpq):
+    return vpq('volume|nominativereporter').attr('volnumber')
+
 
 if __name__ == '__main__':
     zipname = argv[1]
