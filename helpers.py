@@ -37,8 +37,16 @@ namespaces = {
     'alto': 'http://www.loc.gov/standards/alto/ns-v3#',
 }
 
+volmets_namespaces = {
+    'METS': 'http://www.loc.gov/METS/',
+    'volume': 'http://nrs.harvard.edu/urn-3:HLS.Libr.US_Case_Law.Schema.Volume:v1',
+}
+
 def parse_file(path):
     return PyQuery(filename=path, parser='xml', namespaces=namespaces)
+
+def parse_volmets_file(path):
+    return PyQuery(filename=path, parser='xml', namespaces=volmets_namespaces)    
 
 def get_case_files(case_root):
     for dir_name, subdir_list, file_list in os.walk(case_root):
@@ -82,7 +90,7 @@ def get_citation(pq):
 
 def get_last_page_number(pq):
     try:
-        lastpage = pq('casebody|court').parent().attr.lastpage or pq('casebody|opinion').parent().attr.lastpage or pq('casebody|p').parent().attr.lastpage or pq('casebody|summary').parent().attr.lastpage or pq('casebody|parties').parent().attr.lastpage
+        lastpage = pq('casebody|casebody').attr('lastpage')
         return int(lastpage)
     except:
         return ''
@@ -151,6 +159,47 @@ def gzip_documents(zipname, filenames):
             zapfile.write(f, fname, compress_type=zipfile.ZIP_DEFLATED)
 
         return zapfile
+
+def get_volume_spinedates(vpq):
+    return vpq('volume|spinedate').text().split(' ')
+
+def get_volume_voldate(vpq):
+    dates = vpq('volume|voldate').text().split(' ')
+    return dates[0]
+
+def get_volume_publisher(vpq):
+    return vpq('volume|publisher').text()
+
+def get_volume_publisher_place(vpq):
+    return vpq('volume|publisher').attr('place')
+
+def get_reporter_abbreviation(vpq):
+    return vpq('volume|reporter').attr('abbreviation')
+
+def get_volnumber(vpq):
+    return vpq('volume|reporter').attr('volnumber')
+
+def get_reporter_name(vpq):
+    return vpq('volume|reporter').text()
+
+def get_file_timestamp(path):
+    return os.path.getmtime(path)
+
+def get_vol_barcode(vpq):
+    return vpq('volume|volume').attr('barcode')
+
+def get_nominativereporter_name(vpq):
+    return vpq('volume|nominativereporter').text()
+
+def get_nominativereporter_abbreviation(vpq):
+    return vpq('volume|nominativereporter').attr('abbreviation')
+
+def get_nominativereporter_abbreviation(vpq):
+    return vpq('volume|nominativereporter').attr('abbreviation')
+
+def get_nominativereporter_volnumber(vpq):
+    return vpq('volume|nominativereporter').attr('volnumber')
+
 
 if __name__ == '__main__':
     zipname = argv[1]

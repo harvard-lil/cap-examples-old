@@ -12,11 +12,15 @@ metadata_inprogress_dir = "/tmp"
 metadata_dump_format = ".csv"
 
 fieldnames = [
-    'caseid', 'firstpage', 'lastpage', 'jurisdiction',
+    'type', 'caseid', 'firstpage', 'lastpage', 'jurisdiction',
     'citation', 'docketnumber', 'decisiondate',
     'decisiondate_original', 'court', 'name',
     'court_abbreviation', 'name_abbreviation', 'volume',
-    'reporter', 'timestamp']
+    'reporter', 'timestamp', 'voldate',
+    'publisher','publisher_place', 'reporter_abbreviation',
+    'reporter_name', 'volnumber', 'nominativereporter_name',
+    'nominativereporter_abbreviation','nominativereporter_volnumber',
+    'barcode',]
 
 def safe_pq(filename, pq, parse_method, *args):
     try:
@@ -25,11 +29,18 @@ def safe_pq(filename, pq, parse_method, *args):
         print "Error:",e, filename
         pass
 
-def parse_for_metadata(case_xml_path):
-    if not "_CASEMETS_" in case_xml_path:
+def parse_for_metadata(xml_path):
+    if "_CASEMETS_" in xml_path:
+        return parse_case_for_metadata(xml_path)
+    elif "_redacted_METS.xml" in xml_path:
+        return parse_vol_for_metadata(xml_path)
+    else:
         return
 
+def parse_case_for_metadata(case_xml_path):
     pq = parse_file(case_xml_path)
+    if not pq:
+        return
     citation = safe_pq(case_xml_path, pq, get_citation)
     cite_parts = citation.split(" ")
     volume, reporter, firstpage = cite_parts[0], " ".join(cite_parts[1:-1]), cite_parts[-1]
@@ -51,6 +62,7 @@ def parse_for_metadata(case_xml_path):
         pass
 
     return {
+        'type': 'case',
         'caseid': get_caseid(pq),
         'firstpage': firstpage,
         'lastpage': lastpage,
@@ -67,6 +79,38 @@ def parse_for_metadata(case_xml_path):
         'reporter': reporter,
         'timestamp': timestamp
     }
+
+def parse_vol_for_metadata(vol_xml_path):
+    vpq = parse_volmets_file(vol_xml_path)
+    if not vpq:
+        return
+    voldate = get_volume_voldate(vpq) or ''
+    publisher = get_volume_publisher(vpq) or ''
+    place = get_volume_publisher_place(vpq) or ''
+    reporter_abbreviation = get_reporter_abbreviation(vpq) or ''
+    reporter_name = get_reporter_name(vpq) or ''
+    volnumber = get_volnumber(vpq) or ''
+    barcode = get_vol_barcode(vpq) or vol_xml_path.split('_redacted_METS.xml')[0].split('/')[-1]
+    nominativereporter_name = get_nominativereporter_name(vpq) or ''
+    nominativereporter_volnumber = get_nominativereporter_volnumber(vpq) or ''
+    nominativereporter_abbreviation = get_nominativereporter_abbreviation(vpq) or ''
+    timestamp = get_file_timestamp(vol_xml_path)
+
+    return {
+        'type': 'volume',
+        'voldate': voldate,
+        'publisher': publisher,
+        'publisher_place': place,
+        'reporter_abbreviation': reporter_abbreviation,
+        'reporter_name': reporter_name,
+        'volnumber': volnumber,
+        'nominativereporter_name': nominativereporter_name,
+        'nominativereporter_abbreviation': nominativereporter_abbreviation,
+        'nominativereporter_volnumber': nominativereporter_volnumber,
+        'barcode': barcode,
+        'timestamp': timestamp,
+    }
+
 
 def write_metadata(input_dir=input_root_dir):
     csv_path = generate_metadata_filepath()
@@ -96,10 +140,24 @@ def write_row(writer, filename, metadata):
         print "Uncaught ERROR:",e, filename
         pass
 
-def traverse_dir(writer, dir_name):
-    for f in tqdm(glob("%s/casemets/*.xml" % dir_name)):
-        metadata = parse_for_metadata(f)
-        write_row(writer, f, metadata)
+def traverse_dir(writer, dirname):
+    for f in tqdm(glob("%s/*" % dirname)):
+        if "_redacted_METS.xml" in f:
+            # get volmets
+            metadata = parse_for_metadata(f)
+            write_row(writer, f, metadata)
+        elif "/casemets" in f:
+            # get casemets
+            for fi in tqdm(glob("%s/*.xml" % f)):
+                metadata = parse_for_metadata(fi)
+                write_row(writer, fi, metadata)
+
+def traverse_dir_for_volmets(writer, dirname):
+    for f in tqdm(glob("%s/*" % dirname)):
+        if "_redacted_METS.xml" in f:
+            # get volmets
+            metadata = parse_for_metadata(f)
+            write_row(writer, f, metadata)
 
 def create_metadata_file(cpath):
     if not os.path.isfile(cpath):
