@@ -68,6 +68,27 @@ def parse_for_metadata(case_xml_path):
         'timestamp': timestamp
     }
 
+def write_metadata_for_all(input_dir=input_root_dir):
+    csv_path = generate_metadata_filepath()
+    [write_case_metadata_for_dir(d) for d in glob("%s/*" % input_dir)]
+
+def write_case_metadata_for_dir(dirname):
+    csv_path = generate_metadata_filepath()
+    create_metadata_file(csv_path)
+    try:
+        with open(csv_path,'a') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            for f in tqdm(glob("%s/casemets/*.xml" % dirname)):
+                metadata = parse_for_metadata(f)
+                write_row(writer, f, metadata)
+
+    except Exception as e:
+        print 'write_metadata_for_dir Exception caught %s' % e
+        pass
+
+    finally:
+        move_to_root_dir(csv_path)
+
 def write_metadata(input_dir=input_root_dir):
     csv_path = generate_metadata_filepath()
     create_metadata_file(csv_path)
@@ -122,4 +143,4 @@ def move_to_root_dir(csv_path):
     os.rename(csv_path, new_path)
 
 if __name__ == '__main__':
-    write_metadata()
+    write_metadata_for_all()
